@@ -30,7 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.RemoveAll("./tmp")
+	defer os.Remove(path)
 
 	err = godotenv.Load("local.env")
 

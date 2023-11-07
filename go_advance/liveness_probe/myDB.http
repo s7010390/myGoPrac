@@ -1,6 +1,9 @@
-@base_url=http://localhost:8081
+@base_url=http://localhost:8080
 # @name auth
 
+GET  {{base_url}}/healthz
+
+###
 GET  {{base_url}}/tokenz
 
 
