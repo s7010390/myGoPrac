@@ -1,0 +1,1 @@
+echo "GET http://localhost:8080/limitz" | vegeta attack -rate=5/s -duration=1s --output results.bin | vegeta report results.bin
