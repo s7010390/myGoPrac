@@ -11,6 +11,7 @@ import (
 	"time"
 
 	auth "github.com/s7010390/myTodo/auth"
+	store "github.com/s7010390/myTodo/store"
 	todo "github.com/s7010390/myTodo/todo"
 
 	"github.com/gin-gonic/gin"
@@ -53,9 +54,9 @@ func main() {
 	})
 	r.GET("/tokenz", auth.AccessToken(os.Getenv("SIGN")))
 	protected := r.Group("", auth.Protect([]byte(os.Getenv("SIGN"))))
-
-	handler := todo.NewTodoHandler(db)
-	protected.POST("/todos", handler.NewTask)
+	store := store.NewGormStore(db)
+	handler := todo.NewTodoHandler(store)
+	protected.POST("/todos", todo.NewGinHandler(handler.NewTask))
 	protected.GET("/todos", handler.List)
 	protected.DELETE("/todos/:id", handler.Remove)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

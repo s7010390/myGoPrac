@@ -17,21 +17,36 @@ type Todo struct {
 }
 
 func (Todo) TableName() string {
-	return "todo"
+	return "todos"
+}
+
+type storer interface {
+	MyNew(*Todo) error
+	MyFind(*[]Todo) error
+	MyDelete(*Todo, int) error
+}
+
+type Context interface {
+	Bind(interface{}) error
+	JSON(int, interface{})
+	TransactionID() string
+	Audiance() string
 }
 
 type TodoHandler struct {
-	db *gorm.DB
+	store storer
 }
 
-func NewTodoHandler(db *gorm.DB) *TodoHandler {
-	return &TodoHandler{db: db}
+func NewTodoHandler(store storer) *TodoHandler {
+	return &TodoHandler{store: store}
 }
 
-func (t *TodoHandler) NewTask(c *gin.Context) {
+func (t *TodoHandler) NewTask(c Context) {
 
 	var todo Todo
-	if err := c.ShouldBindJSON(&todo); err != nil {
+	//if err := c.ShouldBindJSON(&todo); err != nil {
+	if err := c.Bind(&todo); err != nil {
+		//c.JSON(http.StatusBadRequest, gin.H{
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -39,16 +54,17 @@ func (t *TodoHandler) NewTask(c *gin.Context) {
 	}
 	//loging
 	if todo.Title == "sleep" {
-		transactionID := c.Request.Header.Get("transactionID")
-		aud, _ := c.Get("aud")
+		//transactionID := c.Request.Header.Get("transactionID")
+		transactionID := c.TransactionID()
+		aud := c.Audiance()
 		log.Println(transactionID, aud, "not allowed")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "not allowed",
 		})
 		return
 	}
-	r := t.db.Create(&todo)
-	if err := r.Error; err != nil {
+	err := t.store.MyNew(&todo)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -62,8 +78,8 @@ func (t *TodoHandler) NewTask(c *gin.Context) {
 }
 func (t *TodoHandler) List(c *gin.Context) {
 	var todos []Todo
-	r := t.db.Find(&todos)
-	if err := r.Error; err != nil {
+	err := t.store.MyFind(&todos)
+	if err != nil {
 
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -84,8 +100,7 @@ func (t *TodoHandler) Remove(c *gin.Context) {
 		return
 	}
 
-	r := t.db.Delete(&Todo{}, id)
-	if err := r.Error; err != nil {
+	if err := t.store.MyDelete(&Todo{}, id); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
