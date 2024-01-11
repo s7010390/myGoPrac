@@ -13,7 +13,7 @@ Authorization: Bearer {{token}}
 
 {
      "text":"test01",
-     "author":"Natchapon"
+     "author":"Ss13"
 }
 
 ###
@@ -36,3 +36,11 @@ DELETE  {{base_url}}/todos/1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
+###
+POST {{base_url}}/todos
+Content-Type: application/json
+
+{
+     "text":"test01",
+     "author":"123"
+}

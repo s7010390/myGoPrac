@@ -44,9 +44,7 @@ func NewTodoHandler(store storer) *TodoHandler {
 func (t *TodoHandler) NewTask(c Context) {
 
 	var todo Todo
-	//if err := c.ShouldBindJSON(&todo); err != nil {
 	if err := c.Bind(&todo); err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -54,7 +52,6 @@ func (t *TodoHandler) NewTask(c Context) {
 	}
 	//loging
 	if todo.Title == "sleep" {
-		//transactionID := c.Request.Header.Get("transactionID")
 		transactionID := c.TransactionID()
 		aud := c.Audiance()
 		log.Println(transactionID, aud, "not allowed")
