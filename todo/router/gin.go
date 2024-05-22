@@ -3,7 +3,7 @@ package router
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	todo "github.com/s7010390/myTodo/todo"
+	"github.com/natchapon/todoapi/todo"
 )
 
 type MyContext struct {
@@ -17,17 +17,14 @@ func NewMyContext(c *gin.Context) *MyContext {
 func (c *MyContext) Bind(v interface{}) error {
 	return c.Context.ShouldBindJSON(v)
 }
-
 func (c *MyContext) JSON(statuscode int, v interface{}) {
 	c.Context.JSON(statuscode, v)
 }
-
 func (c *MyContext) TransactionID() string {
-	return c.Context.Request.Header.Get("transactionID")
+	return c.Request.Header.Get("TransactionID")
 }
-
-func (c *MyContext) Audiance() string {
-	if aud, ok := c.Context.Get("aud"); ok {
+func (c *MyContext) Audience() string {
+	if aud, ok := c.Get("aud"); ok {
 		if s, ok := aud.(string); ok {
 			return s
 		}
@@ -52,11 +49,12 @@ func NewMyRouter() *MyRouter {
 		"http://localhost:8080",
 	}
 	config.AllowHeaders = []string{
-		"origin",
+		"Origin",
 		"Authorization",
 		"TransactionID",
 	}
 	r.Use(cors.New(config))
+
 	return &MyRouter{r}
 }
 

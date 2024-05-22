@@ -1,7 +1,10 @@
 package store
 
 import (
-	todo "github.com/s7010390/myTodo/todo"
+	"os"
+
+	"github.com/natchapon/todoapi/todo"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -9,18 +12,17 @@ type GormStore struct {
 	db *gorm.DB
 }
 
-func NewGormStore(db *gorm.DB) *GormStore {
-	return &GormStore{db: db}
+func NewGormStore() *GormStore {
+	db, err := gorm.Open(sqlite.Open(os.Getenv("DB_CONN")), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	db.AutoMigrate(&todo.Todo{})
+
+	return &GormStore{db}
 }
 
-func (store *GormStore) MyNew(todo *todo.Todo) error {
-	return store.db.Create(todo).Error
-}
-
-func (store *GormStore) MyFind(todos *[]todo.Todo) error {
-	return store.db.Find(todos).Error
-
-}
-func (store *GormStore) MyDelete(todo *todo.Todo, i int) error {
-	return store.db.Delete(todo, i).Error
+func (s *GormStore) New(todo *todo.Todo) error {
+	return s.db.Create(todo).Error
 }

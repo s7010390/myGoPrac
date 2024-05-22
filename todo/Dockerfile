@@ -1,20 +1,27 @@
-# syntax=docker/dockerfile:1
+FROM golang:1.17-buster AS build
 
-FROM golang:1.21.1
-
-# Set destination for COPY
 WORKDIR /app
 
-# Download Go modules
-COPY ./go.mod ./go.sum ./
+COPY go.mod ./
+COPY go.sum ./
 RUN go mod download
 
 COPY . ./
 
-RUN go build -o /my_todo
+ENV GOARCH=amd64
 
-EXPOSE 8080
+RUN go build \
+    -ldflags "-X main.buildcommit=`git rev-parse --short HEAD` \
+    -X main.buildtime=`date "+%Y-%m-%dT%H:%M:%S%Z:00"`" \
+    -o /go/bin/app
 
-# Run
+## Deploy
+FROM gcr.io/distroless/base-debian11
 
-CMD ["/my_todo"]
+COPY --from=build /go/bin/app /app
+
+EXPOSE 8081
+
+USER nonroot:nonroot
+
+CMD ["/app"]

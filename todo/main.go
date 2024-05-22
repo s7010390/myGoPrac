@@ -5,70 +5,35 @@ import (
 	"net/http"
 	"os"
 
-	router "github.com/s7010390/myTodo/router"
-	store "github.com/s7010390/myTodo/store"
-	todo "github.com/s7010390/myTodo/todo"
-
 	"github.com/joho/godotenv"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+
+	"github.com/natchapon/todoapi/router"
+	"github.com/natchapon/todoapi/store"
+	"github.com/natchapon/todoapi/todo"
 )
 
 func main() {
-	err := godotenv.Load("local.env")
+	_, err := os.Create("/tmp/live")
 	if err != nil {
-		log.Panicln("Please consider env var: %s", err)
+		log.Fatal(err)
+	}
+	defer os.Remove("/tmp/live")
+
+	err = godotenv.Load("local.env")
+	if err != nil {
+		log.Printf("please consider environment variables: %s\n", err)
 	}
 
-	db, err := gorm.Open(sqlite.Open("som.db"), &gorm.Config{})
-	if err != nil {
-		panic("failed")
-	}
+	r := router.NewFiberRouter()
 
-	err = db.AutoMigrate(&todo.Todo{})
-	if err != nil {
-		return
-	}
-	//r := router.NewMyRouter()
-	r := router.NewFiberRounter()
-	/*r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-	r.GET("/tokenz", auth.AccessToken(os.Getenv("SIGN")))*/
-	//protected := r.Group("", auth.Protect([]byte(os.Getenv("SIGN"))))
-	store := store.NewGormStore(db)
-	handler := todo.NewTodoHandler(store)
+	//gormStore := store.NewGormStore()
+	mongoStore := store.NewMongoDBStore()
+
+	handler := todo.NewTodoHandler(mongoStore)
 	r.POST("/todos", handler.NewTask)
-	//protected.GET("/todos", handler.List)
-	//protected.DELETE("/todos/:id", handler.Remove)
-	//ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	//defer stop()
 
-	/*s := &http.Server{
-		Addr: ":" + os.Getenv("PORT"),
-		Handler:        r,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-	}
-	*/
-	//go func() {
 	if err := r.Listen(":" + os.Getenv("PORT")); err != nil && err != http.ErrServerClosed {
-		log.Fatal("listen: %s\n", err)
+		log.Fatalf("listen: %s\n", err)
 	}
-	//}()
 
-	/*<-ctx.Done()
-	stop()
-	fmt.Println("Shutting down gracefully, press Ctrl+C again to force")
-
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := s.Shutdown(timeoutCtx); err != nil {
-		fmt.Println(err)
-	}*/
-	//r.Run()
 }
